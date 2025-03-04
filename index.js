@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer } from 'node:http';
+import './pokemon.js';
 
 const app = express();
 const server = createServer(app);
