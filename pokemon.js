@@ -1,8 +1,6 @@
-async function getRandomPokemon(count = 10) {
+export async function getRandomPokemons(count = 3) {
     const pokemonList = [];
-
     const pokemonCount = 100;
-
 
     const promises = Array.from({ length: count }, async () => {
         const randomId = Math.floor(Math.random() * pokemonCount) + 1;
@@ -23,12 +21,12 @@ async function getRandomPokemon(count = 10) {
     const randomPokemons = await Promise.all(promises);
     pokemonList.push(...randomPokemons);
 
-    await getPokemonEvolution(pokemonList);
+    await getEvolvedPokemons(pokemonList);
 
     return pokemonList;
 }
 
-async function getPokemonEvolution(pokemonList) {
+export async function getEvolvedPokemons(pokemonList) {
     const pokemonEvolutionList = [];
 
     for (const pokemon of pokemonList) {
@@ -69,5 +67,3 @@ async function getPokemonEvolution(pokemonList) {
 
     return pokemonEvolutionList;
 }
-
-getRandomPokemon();
