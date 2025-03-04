@@ -1,26 +1,29 @@
 async function getRandomPokemon(count = 10) {
     const pokemonList = [];
 
-    const pokemonCountResponse = await fetch(`https://pokeapi.co/api/v2/pokemon`);
-    const pokemonCountData = await pokemonCountResponse.json();
-    const pokemonCount = pokemonCountData.count;
+    const pokemonCount = 100;
 
-    for (let i = 0; i < count; i++) {
+
+    const promises = Array.from({ length: count }, async () => {
         const randomId = Math.floor(Math.random() * pokemonCount) + 1;
-        const randomPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
-        const randomPokemonData = await randomPokemonResponse.json();
-        if (randomPokemonData) {
-            pokemonList.push({
+        try {
+            const randomPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+            if (!randomPokemonResponse.ok) throw new Error(`Pokemon ${randomId} not found`);
+            const randomPokemonData = await randomPokemonResponse.json();
+            return {
                 id: randomPokemonData.id,
                 name: randomPokemonData.name,
                 image: randomPokemonData.sprites.front_default
-            });
-        } else {
-            i--;
+            };
+        } catch (error) {
+            console.error(`Error while searching pokemon ${randomId}:`, error);
         }
-    }
+    });
 
-    getPokemonEvolution(pokemonList);
+    const randomPokemons = await Promise.all(promises);
+    pokemonList.push(...randomPokemons);
+
+    await getPokemonEvolution(pokemonList);
 
     return pokemonList;
 }
@@ -29,13 +32,39 @@ async function getPokemonEvolution(pokemonList) {
     const pokemonEvolutionList = [];
 
     for (const pokemon of pokemonList) {
-        const pokemonEvolutionResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.id}`);
-        const pokemonEvolutionData = await pokemonEvolutionResponse.json();
-        pokemonEvolutionList.push({
-            id: pokemonEvolutionData.id,
-            name: pokemonEvolutionData.name,
-            image: pokemonEvolutionData.sprites.front_default
-        });
+        try {
+            const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemon.id}`);
+            if (!speciesResponse.ok) throw new Error(`Specie not found for ${pokemon.name}`);
+            const speciesData = await speciesResponse.json();
+
+            const evolutionChainUrl = speciesData.evolution_chain.url;
+            const evolutionResponse = await fetch(evolutionChainUrl);
+            const evolutionData = await evolutionResponse.json();
+
+            let evolvedPokemon = null;
+            let currentStage = evolutionData.chain;
+
+            if(currentStage.evolves_to[0].evolves_to[0]) {
+                evolvedPokemon = currentStage.evolves_to[0].evolves_to[0].species;
+            } else {
+                evolvedPokemon = currentStage.evolves_to[0].species;
+            }
+
+            if (evolvedPokemon) {
+                const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
+                if (!evolvedPokemonResponse.ok) throw new Error(`Évolution non trouvée pour ${pokemon.name}`);
+                const evolvedPokemonData = await evolvedPokemonResponse.json();
+
+                pokemonEvolutionList.push({
+                    id: evolvedPokemonData.id,
+                    name: evolvedPokemonData.name,
+                    image: evolvedPokemonData.sprites.front_default
+                });
+            }
+
+        } catch (error) {
+            console.error(`Error trying to find the evolutions ${pokemon.name}`, error);
+        }
     }
 
     return pokemonEvolutionList;
