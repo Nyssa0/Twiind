@@ -1,4 +1,4 @@
-export async function getRandomPokemons(count = 3) {
+export async function getRandomPokemons(count = 9) {
     const pokemonList = [];
     const pokemonCount = 100;
 
@@ -11,7 +11,9 @@ export async function getRandomPokemons(count = 3) {
             return {
                 id: randomPokemonData.id,
                 name: randomPokemonData.name,
-                image: randomPokemonData.sprites.front_default
+                image: randomPokemonData.sprites.front_default,
+                hp: randomPokemonData.stats[0].base_stat,
+                type: randomPokemonData.types[0].type.name
             };
         } catch (error) {
             console.error(`Error while searching pokemon ${randomId}:`, error);
