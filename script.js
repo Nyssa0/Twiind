@@ -80,18 +80,21 @@ export function displayPokemons(pokemons) {
         randomPokemonContainer.appendChild(pokemonElement);
     });
 
+    shuffleCards();
+
     setTimeout(() => {
         viewCards(false);
+
+        document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
+            card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
+        });
+
+        document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
+            card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
+        });
+
         turnCounter();
     }, 10000);
-
-    document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
-        card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
-    });
-
-    document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
-        card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
-    });
 }
 
 
