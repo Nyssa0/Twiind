@@ -2,6 +2,8 @@
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
+let isMyTurn = false;
+let hasChosenCard = false;
 
 document.getElementById('createRoom').addEventListener('click', () => {
     socket.emit('createRoom');
@@ -79,6 +81,17 @@ socket.on("gameStarted", (role) => {
             }
         })
         .catch(error => console.error("Erreur lors du chargement des Pokémon :", error));
+});
+
+socket.on('yourTurn', (turn) => {
+    isMyTurn = turn;
+    hasChosenCard = false;
+    console.log('isMyTurn', isMyTurn);
+    if (turn) {
+        document.getElementById('turn').innerText = "C'est à vous de jouer !";
+    } else {
+        document.getElementById('turn').innerText = "Attendez votre tour...";
+    }
 });
 
 
@@ -175,7 +188,17 @@ export function displayPokemons(pokemons) {
         viewCards(false);
 
         document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
-            card.addEventListener("click", () => deactivateCard(index));
+            card.addEventListener("click", () => {
+                if (!isMyTurn) {
+                    document.getElementById('message').innerText = "Ce n'est pas votre tour !";
+                    return;
+                }
+                if (hasChosenCard) {
+                    document.getElementById('message').innerText = "Vous avez déjà choisi une carte !";
+                    return;
+                }
+                deactivateCard(index);
+            });
         });
 
         turnCounter();
@@ -208,18 +231,19 @@ function viewCards(isVisible) {
 
 function deactivateCard(index) {
     socket.emit('cardChoice', index);
+    console.log('cardChoice', index);
 
-    socket.on('goodMatch', () => {
-        document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
-        document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
-        document.getElementById('message').innerText = `Good match !`;
-    });
-
-    socket.on('badMatch', () => {
-        document.getElementById('message').innerText = `Bad match !`;
-    });
 }
 
+socket.on('goodMatch', (index) => {
+    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
+    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
+    document.getElementById('message').innerText = `Good match !`;
+});
+
+socket.on('badMatch', () => {
+    document.getElementById('message').innerText = `Bad match !`;
+});
 function turnCounter() {
     let counter = 20;
     const interval = setInterval(() => {
