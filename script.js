@@ -16,15 +16,23 @@ function getBackgroundClass(type) {
 
     return typeClasses[type] || "default"; // 'default' est une classe générique si le type n'est pas défini
 }
-export function displayPokemons(pokemons) {
+export async function displayPokemons(pokemons) {
     const randomPokemonContainer = document.querySelector(".randomPokemons");
 
-    pokemons.forEach((randomPokemon) => {
+    for (const randomPokemon of pokemons) {
         const pokemonElement = document.createElement("li");
         pokemonElement.classList.add("pokemon__card");
         const backgroundClass = getBackgroundClass(randomPokemon.type);
 
-        pokemonElement.innerHTML = `
+        const tcgCard = await getTcgCard(randomPokemon.name)
+        console.log(tcgCard);
+
+        if (tcgCard) {
+            pokemonElement.innerHTML = `
+               <img src="${tcgCard}" alt="${randomPokemon.name}">
+            `
+        } else {
+            pokemonElement.innerHTML = `
                 <div class="pokemon__background pokemon__background--${backgroundClass}">
                     <table class="pokemon__header">
                         <tr>
@@ -73,6 +81,34 @@ export function displayPokemons(pokemons) {
                     </div>
                 </div>
             `;
+        }
+
         randomPokemonContainer.appendChild(pokemonElement);
-    });
+    }
+}
+
+async function getTcgCard(pokemonName) {
+    const API_KEY = "75c31550-d6c3-49fa-98fc-98205889e850";
+
+    try {
+        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
+            headers: {
+                "X-Api-Key": API_KEY
+            }
+        });
+
+        if (!response.ok) throw new Error("TCG card not found");
+
+        const data = await response.json();
+        
+        const filteredCards = data.data.filter(card => !card.subtypes.includes("TAG TEAM"));
+
+        if (filteredCards.length === 0) throw new Error("No valid cards found");
+
+        let randomCard = Math.floor(Math.random() * filteredCards.length);
+        return filteredCards[randomCard].images.large;
+
+    } catch (error) {
+        console.error("Error while searching TCG card:", error);
+    }
 }
