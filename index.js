@@ -12,6 +12,7 @@ const io = new Server(server);
 const userRooms = new Map();
 const roomPlayers = new Map();
 const readyPlayers = new Map();
+let selectedIndexes = [];
 
 app.use(express.static(__dirname));
 
@@ -131,6 +132,19 @@ io.on('connection', (socket) => {
             readyPlayers.set(roomId, new Set());
         }
     });
+
+    socket.on('cardChoice', (cardChoice) => {
+        selectedIndexes.push(cardChoice);
+        console.log(selectedIndexes);
+        if (selectedIndexes.length === 2) {
+            if (selectedIndexes[0] === selectedIndexes[1]) {
+                io.emit('goodMatch');
+            } else {
+                io.emit('badMatch');
+            }
+            selectedIndexes = [];
+        }
+    })
 
     socket.on('disconnect', () => {
         const roomId = userRooms.get(socket.id);
