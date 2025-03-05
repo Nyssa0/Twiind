@@ -151,6 +151,18 @@ async function displayPokemons() {
     } catch (error) {
         console.error("Error while displaying pokemons:", error);
     }
+
+    setTimeout(() => {
+        hideCards(false);
+    }, 10000);
+
+    document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
+        card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
+    });
+
+    document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
+        card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
+    });
 }
 
 document.addEventListener("DOMContentLoaded", displayPokemons);
@@ -162,14 +174,39 @@ function shuffleCards() {
     });
 }
 
-function hideCards() {
+function hideCards(isVisible) {
     const cards = document.querySelectorAll(".pokemon__card");
+
     cards.forEach((card) => {
         card.classList.toggle("is-hidden");
-        shuffleCards();
     });
+
+    if (isVisible === true) {
+        setTimeout(() => {
+            hideCards(false);
+        }, 10000);
+    }
 }
 
-setInterval(() => {
-    hideCards();
-}, 5000);
+let selectedIndexes = [];
+
+function deactivateCard(index, listType) {
+    selectedIndexes.push({ index, listType });
+
+    if (selectedIndexes.length === 2) {
+        const [first, second] = selectedIndexes;
+
+        if (first.index === second.index && first.listType !== second.listType) {
+            alert("Good match !");
+            document.querySelectorAll("." + first.listType + " .pokemon__card")[first.index].classList.add("disabled");
+            document.querySelectorAll("." + first.listType + " .pokemon__card")[first.index].classList.remove("is-hidden");
+            document.querySelectorAll("." + second.listType + " .pokemon__card")[second.index].classList.add("disabled");
+            document.querySelectorAll("." + second.listType + " .pokemon__card")[second.index].classList.remove("is-hidden");
+        } else {
+            alert("Bad match !");
+        }
+
+
+        selectedIndexes = [];
+    }
+}

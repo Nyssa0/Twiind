@@ -284,4 +284,9 @@ span.strong {
   font-weight: 700;
 }
 
+.disabled {
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
 /*# sourceMappingURL=style.css.map */
