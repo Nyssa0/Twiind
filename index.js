@@ -30,7 +30,7 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         userRooms.set(socket.id, roomId);
         roomPlayers.set(roomId, [socket.id]);
-        readyPlayers.set(roomId, 0);
+        readyPlayers.set(roomId, new Set());
         console.log(`Room créée : ${roomId}`);
         socket.emit('roomCreated', roomId);
     });
@@ -61,25 +61,28 @@ io.on('connection', (socket) => {
             socket.leave(roomId);
             userRooms.delete(socket.id);
 
-            const players = roomPlayers.get(roomId);
-            roomPlayers.set(roomId, players.filter(id => id !== socket.id));
+            const players = roomPlayers.get(roomId).filter(id => id !== socket.id);
+            roomPlayers.set(roomId, players);
 
             io.to(roomId).emit('playerLeft', socket.id);
-            readyPlayers.set(roomId, 0);
+            readyPlayers.get(roomId)?.delete(socket.id);
         }
     });
 
-    socket.on('playerReady', (roomId) => {
+    socket.on('playerReady', () => {
+        const roomId = userRooms.get(socket.id);
         if (!roomId) return;
 
-        let readyCount = readyPlayers.get(roomId) || 0;
-        readyCount++;
-        readyPlayers.set(roomId, readyCount);
+        const readySet = readyPlayers.get(roomId);
+        if (!readySet) return;
 
-        io.to(roomId).emit('updateReadyCount', readyCount);
+        readySet.add(socket.id);
 
-        if (readyCount === 2) {
+        io.to(roomId).emit('updateReadyCount', readySet.size);
+
+        if (readySet.size === 2) {
             io.to(roomId).emit('gameStarted');
+            readyPlayers.set(roomId, new Set())
         }
     });
 
@@ -87,10 +90,9 @@ io.on('connection', (socket) => {
         const roomId = userRooms.get(socket.id);
         if (roomId) {
             userRooms.delete(socket.id);
-            const players = roomPlayers.get(roomId);
-            roomPlayers.set(roomId, players.filter(id => id !== socket.id));
+            roomPlayers.set(roomId, roomPlayers.get(roomId).filter(id => id !== socket.id));
+            readyPlayers.get(roomId)?.delete(socket.id);
             io.to(roomId).emit('playerLeft', socket.id);
-            readyPlayers.set(roomId, 0);
         }
     });
 });
