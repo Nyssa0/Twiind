@@ -1,21 +1,34 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import path from 'path';
+import { getRandomPokemons, getEvolvedPokemons } from "./pokemon.js";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
 const server = createServer(app);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const io = new Server(server);
-
-app.use(express.static(path.join(process.cwd())));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'index.html'));
-});
-
 const userRooms = new Map();
 const roomPlayers = new Map();
 const readyPlayers = new Map();
+
+
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+    res.sendFile(join(__dirname, 'index.html'));
+});
+
+app.get("/api/pokemons", async (req, res) => {
+    try {
+        const randomPokemons = await getRandomPokemons();
+        const evolvedPokemons = await getEvolvedPokemons(randomPokemons);
+        res.json({randomPokemons, evolvedPokemons});
+    } catch (error) {
+        res.status(500).json({ error: "Error while getting the pokemons." });
+    }
+});
 
 io.on('connection', (socket) => {
     console.log(`Nouvelle connexion : ${socket.id}`);
