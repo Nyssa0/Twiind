@@ -152,18 +152,21 @@ async function displayPokemons() {
         console.error("Error while displaying pokemons:", error);
     }
 
+    shuffleCards();
+
     setTimeout(() => {
         viewCards(false);
+
+        document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
+            card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
+        });
+
+        document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
+            card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
+        });
+
         turnCounter();
     }, 10000);
-
-    document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
-        card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
-    });
-
-    document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
-        card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
-    });
 }
 
 document.addEventListener("DOMContentLoaded", displayPokemons);
