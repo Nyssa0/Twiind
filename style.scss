@@ -257,7 +257,11 @@ span.strong {
 	font-weight: 700;
 }
 
-.disabled {
+body.disabled,
+.pokemon__card.disabled {
 	pointer-events: none;
+}
+
+.pokemon__card.disabled {
 	filter: grayscale(1);
 }

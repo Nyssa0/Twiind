@@ -153,7 +153,8 @@ async function displayPokemons() {
     }
 
     setTimeout(() => {
-        hideCards(false);
+        viewCards(false);
+        turnCounter();
     }, 10000);
 
     document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
@@ -174,7 +175,8 @@ function shuffleCards() {
     });
 }
 
-function hideCards(isVisible) {
+function viewCards(isVisible) {
+    isVisible ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
     const cards = document.querySelectorAll(".pokemon__card");
 
     cards.forEach((card) => {
@@ -183,7 +185,8 @@ function hideCards(isVisible) {
 
     if (isVisible === true) {
         setTimeout(() => {
-            hideCards(false);
+            viewCards(false);
+            turnCounter();
         }, 10000);
     }
 }
@@ -206,7 +209,21 @@ function deactivateCard(index, listType) {
             alert("Bad match !");
         }
 
-
         selectedIndexes = [];
     }
+}
+
+function turnCounter() {
+    let counter = 20;
+    const interval = setInterval(() => {
+        counter--;
+        document.querySelector(".turn__counter").innerHTML = counter;
+
+        if (counter === 0) {
+            clearInterval(interval);
+            document.querySelector(".turn__counter").innerHTML = 0;
+            shuffleCards();
+            viewCards(true);
+        }
+    }, 1000);
 }
