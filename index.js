@@ -14,6 +14,8 @@ app.get('/', (req, res) => {
 });
 
 const userRooms = new Map();
+const roomPlayers = new Map();
+const readyPlayers = new Map();
 
 io.on('connection', (socket) => {
     console.log(`Nouvelle connexion : ${socket.id}`);
@@ -27,6 +29,8 @@ io.on('connection', (socket) => {
         const roomId = Math.random().toString(36).substr(2, 6);
         socket.join(roomId);
         userRooms.set(socket.id, roomId);
+        roomPlayers.set(roomId, [socket.id]);
+        readyPlayers.set(roomId, 0);
         console.log(`Room créée : ${roomId}`);
         socket.emit('roomCreated', roomId);
     });
@@ -41,8 +45,11 @@ io.on('connection', (socket) => {
         if (rooms.has(roomId)) {
             socket.join(roomId);
             userRooms.set(socket.id, roomId);
+            roomPlayers.get(roomId).push(socket.id);
             console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
-            io.to(roomId).emit('playerJoined', socket.id, roomId);
+
+            const playerCount = roomPlayers.get(roomId).length;
+            io.to(roomId).emit('playerJoined', socket.id, roomId, playerCount);
         } else {
             socket.emit('error', 'Room inexistante');
         }
@@ -53,8 +60,26 @@ io.on('connection', (socket) => {
         if (roomId) {
             socket.leave(roomId);
             userRooms.delete(socket.id);
-            console.log(`Joueur ${socket.id} a quitté la room ${roomId}`);
+
+            const players = roomPlayers.get(roomId);
+            roomPlayers.set(roomId, players.filter(id => id !== socket.id));
+
             io.to(roomId).emit('playerLeft', socket.id);
+            readyPlayers.set(roomId, 0);
+        }
+    });
+
+    socket.on('playerReady', (roomId) => {
+        if (!roomId) return;
+
+        let readyCount = readyPlayers.get(roomId) || 0;
+        readyCount++;
+        readyPlayers.set(roomId, readyCount);
+
+        io.to(roomId).emit('updateReadyCount', readyCount);
+
+        if (readyCount === 2) {
+            io.to(roomId).emit('gameStarted');
         }
     });
 
@@ -62,7 +87,10 @@ io.on('connection', (socket) => {
         const roomId = userRooms.get(socket.id);
         if (roomId) {
             userRooms.delete(socket.id);
+            const players = roomPlayers.get(roomId);
+            roomPlayers.set(roomId, players.filter(id => id !== socket.id));
             io.to(roomId).emit('playerLeft', socket.id);
+            readyPlayers.set(roomId, 0);
         }
     });
 });
