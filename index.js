@@ -41,6 +41,14 @@ io.on('connection', (socket) => {
             return;
         }
 
+        const players = roomPlayers.get(roomId) || [];
+
+        // Empêcher un 3ème joueur de rejoindre
+        if (players.length >= 2) {
+            socket.emit('error', 'La room est pleine. Impossible de rejoindre.');
+            return;
+        }
+
         const rooms = io.sockets.adapter.rooms;
         if (rooms.has(roomId)) {
             socket.join(roomId);
