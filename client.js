@@ -175,11 +175,7 @@ export function displayPokemons(pokemons) {
         viewCards(false);
 
         document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
-            card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
-        });
-
-        document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
-            card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
+            card.addEventListener("click", () => deactivateCard(index));
         });
 
         turnCounter();
@@ -210,11 +206,7 @@ function viewCards(isVisible) {
     }
 }
 
-let selectedIndexes;
-
-function deactivateCard(index, listType) {
-    selectedIndexes = index;
-    console.log(selectedIndexes);
+function deactivateCard(index) {
     socket.emit('cardChoice', index);
 
     socket.on('goodMatch', () => {
@@ -224,7 +216,7 @@ function deactivateCard(index, listType) {
     });
 
     socket.on('badMatch', () => {
-        document.getElementById('message').innerText = `Good match !`;
+        document.getElementById('message').innerText = `Bad match !`;
     });
 }
 
