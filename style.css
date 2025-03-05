@@ -61,9 +61,48 @@ table {
   font-stretch: ultra-condensed;
 }
 
-.pokemon__background {
+.pokemon__card {
+  background-color: transparent;
   width: 310px;
   height: 480px;
+  perspective: 1000px;
+}
+
+.pokemon__card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.pokemon__card.is-hidden .pokemon__card-inner {
+  transform: rotateY(180deg);
+}
+
+.pokemon__background, .pokemon__back {
+  position: absolute;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.pokemon__back {
+  transform: rotateY(180deg);
+}
+
+.pokemon__card-inner {
+  position: relative;
+}
+.pokemon__card-inner .pokemon__background,
+.pokemon__card-inner .pokemon__back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.pokemon__background {
   margins: 0px;
   padding: 5px 10px 5px 10px;
   border: 10px solid gold;
@@ -146,7 +185,7 @@ td.basic {
   width: 20px;
 }
 
-img {
+.pokemon__image {
   padding: 0px;
   margin: 0px 0px 5px 0px;
   border: 5px yellow outset;
