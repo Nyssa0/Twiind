@@ -14,7 +14,7 @@ function getBackgroundClass(type) {
         psychic: "lightpurple",
     };
 
-    return typeClasses[type] || "default"; // 'default' est une classe générique si le type n'est pas défini
+    return typeClasses[type] || "default";
 }
 
 export function displayPokemons(pokemons) {

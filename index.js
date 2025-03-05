@@ -48,11 +48,11 @@ app.post("/api/reset-pokemons", async (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    console.log(`Nouvelle connexion : ${socket.id}`);
+    console.log(`New connection : ${socket.id}`);
 
     socket.on('createRoom', () => {
         if (userRooms.has(socket.id)) {
-            socket.emit('error', 'Vous devez d\'abord quitter votre room actuelle.');
+            socket.emit('error', 'Leave the current room first.');
             return;
         }
 
@@ -61,21 +61,20 @@ io.on('connection', (socket) => {
         userRooms.set(socket.id, roomId);
         roomPlayers.set(roomId, [socket.id]);
         readyPlayers.set(roomId, new Set());
-        console.log(`Room créée : ${roomId}`);
+        console.log(`Room created : ${roomId}`);
         socket.emit('roomCreated', roomId);
     });
 
     socket.on('joinRoom', (roomId) => {
         if (userRooms.has(socket.id)) {
-            socket.emit('error', 'Vous devez d\'abord quitter votre room actuelle.');
+            socket.emit('error', 'Leave the current room first.');
             return;
         }
 
         const players = roomPlayers.get(roomId) || [];
 
-        // Empêcher un 3ème joueur de rejoindre
         if (players.length >= 2) {
-            socket.emit('error', 'La room est pleine. Impossible de rejoindre.');
+            socket.emit('error', 'The room is full. Impossible to join.');
             return;
         }
 
@@ -84,12 +83,12 @@ io.on('connection', (socket) => {
             socket.join(roomId);
             userRooms.set(socket.id, roomId);
             roomPlayers.get(roomId).push(socket.id);
-            console.log(`Joueur ${socket.id} a rejoint la room ${roomId}`);
+            console.log(`Player ${socket.id} joined the room ${roomId}`);
 
             const playerCount = roomPlayers.get(roomId).length;
             io.to(roomId).emit('playerJoined', socket.id, roomId, playerCount);
         } else {
-            socket.emit('error', 'Room inexistante');
+            socket.emit('error', 'Non existing room.');
         }
     });
 
@@ -119,7 +118,7 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('updateReadyCount', readySet.size);
 
         if (readySet.size === 2) {
-            const players = [...readySet]; // Convertir Set en tableau
+            const players = [...readySet];
             const roles = {
                 [players[0]]: 'random',
                 [players[1]]: 'evolved'

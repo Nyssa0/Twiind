@@ -9,7 +9,7 @@ document.getElementById('createRoom').addEventListener('click', () => {
 
 socket.on('roomCreated', (roomId) => {
     currentRoom = roomId;
-    document.getElementById('message').innerText = `Room créée : ${roomId}`;
+    document.getElementById('message').innerText = `Room created : ${roomId}`;
     document.getElementById('leaveRoom').disabled = false;
 });
 
@@ -18,13 +18,13 @@ document.getElementById('joinRoom').addEventListener('click', () => {
     if (roomId && !currentRoom) {
         socket.emit('joinRoom', roomId);
     } else {
-        document.getElementById('message').innerText = 'Quittez d\'abord votre room actuelle.';
+        document.getElementById('message').innerText = 'Leave the current room first.';
     }
 });
 
 socket.on('playerJoined', (playerId, roomId, playerCount) => {
     currentRoom = roomId;
-    document.getElementById('message').innerText = `Un joueur a rejoint : ${playerId}`;
+    document.getElementById('message').innerText = `The player ${playerId} joined`;
     document.getElementById('leaveRoom').disabled = false;
 
     if (playerCount === 2) {
@@ -36,14 +36,14 @@ document.getElementById('leaveRoom').addEventListener('click', () => {
     if (currentRoom) {
         socket.emit('leaveRoom');
         currentRoom = null;
-        document.getElementById('message').innerText = 'Vous avez quitté la room.';
+        document.getElementById('message').innerText = 'You left the room.';
         document.getElementById('leaveRoom').disabled = true;
         document.getElementById('startGame').disabled = true;
     }
 });
 
 socket.on('playerLeft', (playerId) => {
-    document.getElementById('message').innerText = `Un joueur a quitté : ${playerId}`;
+    document.getElementById('message').innerText = `${playerId} left.`;
     document.getElementById('startGame').disabled = true;
     playersReady = 0;
 });
@@ -56,7 +56,7 @@ document.getElementById('startGame').addEventListener('click', () => {
 
 socket.on('updateReadyCount', (readyCount) => {
     playersReady = readyCount;
-    document.getElementById('message').innerText = `Joueurs prêts : ${playersReady}/2`;
+    document.getElementById('message').innerText = `Ready players : ${playersReady}/2`;
 
     if (playersReady === 2) {
         socket.emit('startGame', currentRoom);
@@ -64,7 +64,7 @@ socket.on('updateReadyCount', (readyCount) => {
 });
 
 socket.on('gameStarted', () => {
-    document.getElementById('message').innerText = 'La partie commence ! 🚀';
+    document.getElementById('message').innerText = 'The game starts ! 🚀';
     document.getElementById('startGame').disabled = true;
 });
 
@@ -80,7 +80,7 @@ socket.on("gameStarted", (role) => {
                 displayPokemons(evolvedPokemons);
             }
         })
-        .catch(error => console.error("Erreur lors du chargement des Pokémon :", error));
+        .catch(error => console.error("Error while loading the pokemons :", error));
 });
 
 

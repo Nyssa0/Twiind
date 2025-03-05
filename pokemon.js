@@ -52,7 +52,7 @@ export async function getEvolvedPokemons(pokemonList) {
 
             if (evolvedPokemon) {
                 const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
-                if (!evolvedPokemonResponse.ok) throw new Error(`Évolution non trouvée pour ${pokemon.name}`);
+                if (!evolvedPokemonResponse.ok) throw new Error(`Evolution not found for ${pokemon.name}`);
                 const evolvedPokemonData = await evolvedPokemonResponse.json();
 
                 pokemonEvolutionList.push({
