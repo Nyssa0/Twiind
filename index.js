@@ -13,20 +13,37 @@ const userRooms = new Map();
 const roomPlayers = new Map();
 const readyPlayers = new Map();
 
-
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'index.html'));
 });
 
+let cachedPokemons = null;
+
 app.get("/api/pokemons", async (req, res) => {
+    try {
+        if (!cachedPokemons) {
+            const randomPokemons = await getRandomPokemons();
+            const evolvedPokemons = await getEvolvedPokemons(randomPokemons);
+            cachedPokemons = { randomPokemons, evolvedPokemons };
+        }
+
+        res.json(cachedPokemons);
+    } catch (error) {
+        res.status(500).json({ error: "Error while getting the pokemons." });
+    }
+});
+
+// Endpoint pour réinitialiser les Pokémon
+app.post("/api/reset-pokemons", async (req, res) => {
     try {
         const randomPokemons = await getRandomPokemons();
         const evolvedPokemons = await getEvolvedPokemons(randomPokemons);
-        res.json({randomPokemons, evolvedPokemons});
+        cachedPokemons = { randomPokemons, evolvedPokemons };
+        res.json({ message: "Pokémon list reset!" });
     } catch (error) {
-        res.status(500).json({ error: "Error while getting the pokemons." });
+        res.status(500).json({ error: "Error while resetting the pokemons." });
     }
 });
 
@@ -102,8 +119,16 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('updateReadyCount', readySet.size);
 
         if (readySet.size === 2) {
-            io.to(roomId).emit('gameStarted');
-            readyPlayers.set(roomId, new Set())
+            const players = [...readySet]; // Convertir Set en tableau
+            const roles = {
+                [players[0]]: 'random',
+                [players[1]]: 'evolved'
+            };
+
+            io.to(players[0]).emit('gameStarted', 'random');
+            io.to(players[1]).emit('gameStarted', 'evolved');
+
+            readyPlayers.set(roomId, new Set());
         }
     });
 

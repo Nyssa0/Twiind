@@ -1,3 +1,4 @@
+import { displayPokemons } from "./script.js";
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
@@ -66,6 +67,22 @@ socket.on('gameStarted', () => {
     document.getElementById('message').innerText = 'La partie commence ! 🚀';
     document.getElementById('startGame').disabled = true;
 });
+
+socket.on("gameStarted", (role) => {
+    fetch("/api/pokemons")
+        .then(response => response.json())
+        .then(({ randomPokemons, evolvedPokemons }) => {
+            console.log(randomPokemons)
+            console.log(evolvedPokemons)
+            if (role === "random") {
+                displayPokemons(randomPokemons);
+            } else {
+                displayPokemons(evolvedPokemons);
+            }
+        })
+        .catch(error => console.error("Erreur lors du chargement des Pokémon :", error));
+});
+
 
 socket.on('error', (msg) => {
     document.getElementById('message').innerText = msg;
