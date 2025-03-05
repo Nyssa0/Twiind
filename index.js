@@ -169,16 +169,17 @@ io.on('connection', (socket) => {
         const firstChoice = firstCard.get(roomId);
         if (firstChoice.index === cardChoice) {
             io.to(roomId).emit('goodMatch', cardChoice);
+
+            // Réinitialisation et inversion des rôles
+            firstCard.set(roomId, null);
+            playerTurns.set(roomId, socket.id); // Le joueur qui a trouvé devient le "premier joueur"
+
+            io.to(socket.id).emit('yourTurn', true);
+            io.to(opponent).emit('yourTurn', false);
         } else {
             io.to(roomId).emit('badMatch');
+            // le joueur actuel continue jusqu'à ce qu'il trouve une paire
         }
-
-        // Réinitialisation et inversion des rôles
-        firstCard.set(roomId, null);
-        playerTurns.set(roomId, opponent);
-
-        io.to(socket.id).emit('yourTurn', false);
-        io.to(opponent).emit('yourTurn', true);
     });
 
     socket.on('disconnect', () => {
