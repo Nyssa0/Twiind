@@ -1,8 +1,10 @@
+// import { displayPokemons } from "./script.js";
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
 let isMyTurn = false;
 let hasChosenCard = false;
+let canSendHint = true;
 
 document.getElementById('createRoom').addEventListener('click', () => {
     socket.emit('createRoom');
@@ -84,13 +86,20 @@ socket.on("gameStarted", (role) => {
 
 socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
-    hasChosenCard = false;
+    console.log('isMyTurn', isMyTurn);
+    console.log('hasChosenCard', hasChosenCard);
     if (isMyTurn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
-        document.getElementById('hints-container').classList.remove('hidden');
+        document.querySelector("#hint-timer").innerHTML = '';
     } else {
         document.getElementById('turn').innerText = "Attendez votre tour...";
+        document.getElementById("received-hints").innerHTML = '';
+    }
+
+    if (isMyTurn || !hasChosenCard) {
         document.getElementById('hints-container').classList.add('hidden');
+    } else {
+        document.getElementById('hints-container').classList.remove('hidden');
     }
 });
 
@@ -192,12 +201,13 @@ export function displayPokemons(pokemons) {
                 if (!isMyTurn) {
                     document.getElementById('message').innerText = "Ce n'est pas votre tour !";
                     return;
+                } else {
+                    deactivateCard(index);
                 }
                 if (hasChosenCard) {
                     document.getElementById('message').innerText = "Vous avez déjà choisi une carte !";
                     return;
                 }
-                deactivateCard(index);
             });
         });
 
@@ -239,6 +249,7 @@ function deactivateCard(index) {
 
     hasChosenCard = true;
     socket.emit('cardChoice', index);
+    hasChosenCard = true;
     console.log('cardChoice', index);
 
 }
@@ -252,7 +263,28 @@ document.getElementById('send-hint').addEventListener("click", () => {
     const hint = { type, generation, status, stage };
 
     socket.emit('sendHint', hint);
+
+    canSendHint = false;
+    document.getElementById('send-hint').disabled = true;
+    startHintCooldown();
 });
+
+function startHintCooldown() {
+    let timeLeft = 10;
+
+    const countdownInterval = setInterval(() => {
+        timeLeft--;
+        document.querySelector("#hint-timer").innerHTML = timeLeft;
+
+        if (timeLeft === 0) {
+            clearInterval(countdownInterval);
+            document.querySelector("#hint-timer").innerHTML = 'Vous pouvez envoyer un indice !';
+            canSendHint = true;
+            document.getElementById('send-hint').disabled = false;
+            document.getElementById('hint-timer').classList.remove('hidden');
+        }
+    }, 1000);
+}
 
 socket.on('receiveHint', (hint) => {
     let hintText = "Indice : ";
