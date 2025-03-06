@@ -1,6 +1,6 @@
 export async function getRandomPokemons(count = 2) {
     const pokemonList = [];
-    const pokemonCount = 300;
+    const pokemonCount = 1000;
     const usedEvolutionChains = new Set();
     const usedPokemonIds = new Set();
 
