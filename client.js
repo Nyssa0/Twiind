@@ -1,4 +1,3 @@
-// import { displayPokemons } from "./script.js";
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
@@ -86,7 +85,6 @@ socket.on("gameStarted", (role) => {
 socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
     hasChosenCard = false;
-    console.log('isMyTurn', isMyTurn);
     if (turn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
     } else {
@@ -116,7 +114,7 @@ function getBackgroundClass(type) {
         psychic: "lightpurple",
     };
 
-    return typeClasses[type] || "default"; // 'default' est une classe générique si le type n'est pas défini
+    return typeClasses[type] || "default";
 }
 
 export function displayPokemons(pokemons) {
@@ -218,7 +216,9 @@ function viewCards(isVisible) {
     const cards = document.querySelectorAll(".pokemon__card");
 
     cards.forEach((card) => {
-        card.classList.toggle("is-hidden");
+        if (!card.classList.contains("disabled")) {
+            card.classList.toggle("is-hidden");
+        }
     });
 
     if (isVisible === true) {
@@ -230,20 +230,41 @@ function viewCards(isVisible) {
 }
 
 function deactivateCard(index) {
-    socket.emit('cardChoice', index);
-    console.log('cardChoice', index);
+    if (!isMyTurn || hasChosenCard) return;
 
+    const selectedCard = document.querySelectorAll(".randomPokemons .pokemon__card")[index];
+    selectedCard.classList.remove("is-hidden");
+
+    hasChosenCard = true;
+    socket.emit('cardChoice', index);
 }
 
-socket.on('goodMatch', (index) => {
-    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
-    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
+socket.on('goodMatch', (index, firstCardIndex) => {
+
     document.getElementById('message').innerText = `Good match !`;
+    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
+
+    setTimeout(() => {
+        if (!isMyTurn) {
+            document.querySelectorAll(".randomPokemons .pokemon__card")[firstCardIndex].classList.add("disabled");
+        } else {
+            document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
+        }
+    }, 1000);
+
+    hasChosenCard = false;
 });
 
-socket.on('badMatch', () => {
+socket.on('badMatch', (index) => {
     document.getElementById('message').innerText = `Bad match !`;
+
+    setTimeout(() => {
+        document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("is-hidden");
+    }, 1000);
+
+    hasChosenCard = false;
 });
+
 function turnCounter() {
     let counter = 20;
     const interval = setInterval(() => {
