@@ -1,4 +1,4 @@
-export async function getRandomPokemons(count = 9) {
+export async function getRandomPokemons(count = 2) {
     const pokemonList = [];
     const pokemonCount = 100;
 

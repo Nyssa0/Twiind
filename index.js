@@ -16,6 +16,8 @@ let selectedIndexes = [];
 const playerTurns = new Map();
 const firstCard = new Map();
 
+let gameOver = false;
+
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
@@ -136,8 +138,9 @@ io.on('connection', (socket) => {
             io.to(players[0]).emit('gameStarted', 'random');
             io.to(players[1]).emit('gameStarted', 'evolved');
 
-
             readyPlayers.set(roomId, new Set());
+
+            gameOver = false;
         }
     });
 
@@ -204,6 +207,18 @@ io.on('connection', (socket) => {
             roomPlayers.set(roomId, roomPlayers.get(roomId).filter(id => id !== socket.id));
             readyPlayers.get(roomId)?.delete(socket.id);
             io.to(roomId).emit('playerLeft', socket.id);
+        }
+    });
+
+    socket.on('gameEnded', (status) => {
+        if (status === true) {
+            const roomId = userRooms.get(socket.id);
+            if (!roomId) return;
+
+            io.to(roomId).emit('gameEnded');
+            cachedPokemons = null;
+        } else {
+            gameOver = true;
         }
     });
 });
