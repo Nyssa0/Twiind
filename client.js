@@ -86,7 +86,6 @@ socket.on("gameStarted", (role) => {
 });
 
 socket.on('gameEnded', () => {
-    console.log('Game ended !')
     document.getElementById('message').innerText = 'The game is over !🔚 You won !🎉 Would you like to play again ?';
     document.getElementById('startGame').disabled = false;
     document.querySelector(".turn__counter").style.display = "none";
@@ -96,8 +95,6 @@ socket.on('gameEnded', () => {
 
 socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
-    console.log('isMyTurn', isMyTurn);
-    console.log('hasChosenCard', hasChosenCard);
     if (isMyTurn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
         document.querySelector("#hint-timer").innerHTML = '';
@@ -147,7 +144,6 @@ export async function displayPokemons(pokemons) {
         const backgroundClass = getBackgroundClass(randomPokemon.type);
 
         const tcgCard = await getTcgCard(randomPokemon.name)
-        console.log(tcgCard);
 
         if (tcgCard) {
             pokemonElement.innerHTML = `
@@ -236,6 +232,7 @@ export async function displayPokemons(pokemons) {
             });
         });
 
+        turnCounter();
     }, 10000);
 }
 
@@ -272,8 +269,6 @@ function deactivateCard(index) {
 
     hasChosenCard = true;
     socket.emit('cardChoice', index);
-    console.log('cardChoice', index);
-
 }
 
 document.getElementById('send-hint').addEventListener("click", () => {
@@ -353,8 +348,8 @@ socket.on('badMatch', (index) => {
 function turnCounter() {
     let counter = 20;
     const interval = setInterval(() => {
-        counter--;
         document.querySelector(".turn__counter").innerHTML = counter;
+        counter--;
 
         if (counter === 0) {
             clearInterval(interval);
@@ -395,7 +390,6 @@ function checkEndGame() {
     const hiddenCards = document.querySelectorAll(".randomPokemons .pokemon__card.is-hidden");
 
     if (hiddenCards.length === 0) {
-        console.log('Game ended !')
         setTimeout(() => {
             socket.emit('gameEnded', true);
             return gameIsEnded = true;
