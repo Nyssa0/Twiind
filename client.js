@@ -1,8 +1,11 @@
+// import { displayPokemons } from "./script.js";
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
 let isMyTurn = false;
 let hasChosenCard = false;
+let canSendHint = true;
+let gameIsEnded = false;
 
 document.getElementById('createRoom').addEventListener('click', () => {
     socket.emit('createRoom');
@@ -82,15 +85,31 @@ socket.on("gameStarted", (role) => {
         .catch(error => console.error("Error while loading the pokemons :", error));
 });
 
+socket.on('gameEnded', () => {
+    console.log('Game ended !')
+    document.getElementById('message').innerText = 'The game is over !🔚 You won !🎉 Would you like to play again ?';
+    document.getElementById('startGame').disabled = false;
+    document.querySelector(".turn__counter").style.display = "none";
+    document.querySelector(".randomPokemons").innerHTML = "";
+    document.querySelector("#turn").innerHTML = "";
+});
+
 socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
-    hasChosenCard = false;
+    console.log('isMyTurn', isMyTurn);
+    console.log('hasChosenCard', hasChosenCard);
     if (isMyTurn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
-        document.getElementById('hints-container').classList.remove('hidden');
+        document.querySelector("#hint-timer").innerHTML = '';
     } else {
         document.getElementById('turn').innerText = "Attendez votre tour...";
+        document.getElementById("received-hints").innerHTML = '';
+    }
+
+    if (isMyTurn || !hasChosenCard) {
         document.getElementById('hints-container').classList.add('hidden');
+    } else {
+        document.getElementById('hints-container').classList.remove('hidden');
     }
 });
 
@@ -119,68 +138,89 @@ function getBackgroundClass(type) {
     return typeClasses[type] || "default";
 }
 
-export function displayPokemons(pokemons) {
+export async function displayPokemons(pokemons) {
     const randomPokemonContainer = document.querySelector(".randomPokemons");
+    const cardPromises = [];
 
-    pokemons.forEach((randomPokemon) => {
-        const pokemonElement = document.createElement("li");
-        pokemonElement.classList.add("pokemon__card");
-        const backgroundClass = getBackgroundClass(randomPokemon.type);
+    for (const randomPokemon of pokemons) {
+        cardPromises.push(new Promise(async (resolve) => {
+            const pokemonElement = document.createElement("li");
+            pokemonElement.classList.add("pokemon__card");
+            const backgroundClass = getBackgroundClass(randomPokemon.type);
 
-        pokemonElement.innerHTML = `
-                <div class="pokemon__card-inner">
-                    <div class="pokemon__background pokemon__background--${backgroundClass}">
-                        <table class="pokemon__header">
-                            <tr>
-                                <td class="basic" colspan="3">Basic Pokémon</td>
-                            </tr>
-                            <tr>
-                                <td class="pokemon__name">${randomPokemon.name} ${randomPokemon.type}</td>
-                                <td class="pokemon__hp">${randomPokemon.hp} HP</td>
-                                <td class="typesign"> ☻ </td>
-                            </tr>
-                        </table>
-                        <img class="pokemon__image" src="${randomPokemon.image}" alt="${randomPokemon.name}">
-                        <br>
-                        <div class="pokemon__info">
-                            <p class="pokemon__description">This is a pokemon description.</p>
-                            <table class="pokemon__stats">
-                                <tr>
-                                    <td class="pokemon__energy">☻</td>
-                                    <td class="pokemon__attack_description pokemon__attack_description--center"><span class="label">Gnaw</span></td>
-                                    <td class="pokemon__damage">10</td>
-                                </tr>
-                            </table>
-                            <table class="pokemon__stats">
-                                <tr>
-                                    <td class="pokemon__energy">☻ ☻</td>
-                                    <td class="pokemon__attack_description"><span class="label">Thundershock</span> <span class="labeltext">Flip a coin. If tails, ${randomPokemon.name} does 10 damage to itself.</span></td>
-                                    <td class="pokemon__damage">20</td>
-                                </tr>
-                            </table>
-                            <table class="pokemon__costs">
-                                <tr class="pokemon__cost_headers">
-                                    <td>weakness</td>
-                                    <td>resistance</td>
-                                    <td>retreat cost</td>
-                                </tr>
-                                <tr class="pokemon__cost_icons">
-                                    <td>☻</td>
-                                    <td></td>
-                                    <td>☻</td>
-                                </tr>
-                            </table>
-                            <ul>
-                                <li class="italicize">I'm writing about pokemons.</li>
-                                <li class="pokemon__copyrights"><br><span class="strong">Illus Mitsuhiro Arita</strong>  <span class="medium">©1995, 96, 98 Nintendo Creatures, GAMEFREAK ©1999 Wizards</span> <span class="strong">58/102 ●</strong></li>       
-                            </ul>
+            const tcgCard = await getTcgCard(randomPokemon.name);
+            console.log(tcgCard);
+
+            if (tcgCard) {
+                pokemonElement.innerHTML = `
+                    <div class="pokemon__card-inner">
+                        <div class="pokemon__background pokemon__background--${backgroundClass}">
+                            <img src="${tcgCard}" class="tcg-card" alt="${randomPokemon.name}">
                         </div>
+                        <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
                     </div>
-                    <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
-                </div>
-            `;
-        randomPokemonContainer.appendChild(pokemonElement);
-    });
+                `;
+            } else {
+                pokemonElement.innerHTML = `
+                    <div class="pokemon__card-inner">
+                        <div class="pokemon__background pokemon__background--${backgroundClass} --not-tcg">
+                            <table class="pokemon__header">
+                                <tr>
+                                    <td class="basic" colspan="3">Basic Pokémon</td>
+                                </tr>
+                                <tr>
+                                    <td class="pokemon__name">${randomPokemon.name} ${randomPokemon.type}</td>
+                                    <td class="pokemon__hp">${randomPokemon.hp} HP</td>
+                                    <td class="typesign"> ☻ </td>
+                                </tr>
+                            </table>
+                            <img class="pokemon__image" src="${randomPokemon.image}" alt="${randomPokemon.name}">
+                            <br>
+                            <div class="pokemon__info">
+                                <p class="pokemon__description">This is a pokemon description.</p>
+                                <table class="pokemon__stats">
+                                    <tr>
+                                        <td class="pokemon__energy">☻</td>
+                                        <td class="pokemon__attack_description pokemon__attack_description--center"><span class="label">Gnaw</span></td>
+                                        <td class="pokemon__damage">10</td>
+                                    </tr>
+                                </table>
+                                <table class="pokemon__stats">
+                                    <tr>
+                                        <td class="pokemon__energy">☻ ☻</td>
+                                        <td class="pokemon__attack_description"><span class="label">Thundershock</span> <span class="labeltext">Flip a coin. If tails, ${randomPokemon.name} does 10 damage to itself.</span></td>
+                                        <td class="pokemon__damage">20</td>
+                                    </tr>
+                                </table>
+                                <table class="pokemon__costs">
+                                    <tr class="pokemon__cost_headers">
+                                        <td>weakness</td>
+                                        <td>resistance</td>
+                                        <td>retreat cost</td>
+                                    </tr>
+                                    <tr class="pokemon__cost_icons">
+                                        <td>☻</td>
+                                        <td></td>
+                                        <td>☻</td>
+                                    </tr>
+                                </table>
+                                <ul>
+                                    <li class="italicize">I'm writing about pokemons.</li>
+                                    <li class="pokemon__copyrights"><br><span class="strong">Illus Mitsuhiro Arita</strong>  <span class="medium">©1995, 96, 98 Nintendo Creatures, GAMEFREAK ©1999 Wizards</span> <span class="strong">58/102 ●</strong></li>       
+                                </ul>
+                            </div>
+                        </div>
+                        <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
+                    </div>
+                `;
+            }
+
+            randomPokemonContainer.appendChild(pokemonElement);
+            resolve();
+        }));
+    }
+
+    await Promise.all(cardPromises);
 
     shuffleCards();
 
@@ -192,19 +232,18 @@ export function displayPokemons(pokemons) {
                 if (!isMyTurn) {
                     document.getElementById('message').innerText = "Ce n'est pas votre tour !";
                     return;
+                } else {
+                    deactivateCard(index);
                 }
                 if (hasChosenCard) {
                     document.getElementById('message').innerText = "Vous avez déjà choisi une carte !";
                     return;
                 }
-                deactivateCard(index);
             });
         });
 
-        turnCounter();
     }, 10000);
 }
-
 
 function shuffleCards() {
     const cards = document.querySelectorAll(".pokemon__card");
@@ -252,7 +291,28 @@ document.getElementById('send-hint').addEventListener("click", () => {
     const hint = { type, generation, status, stage };
 
     socket.emit('sendHint', hint);
+
+    canSendHint = false;
+    document.getElementById('send-hint').disabled = true;
+    startHintCooldown();
 });
+
+function startHintCooldown() {
+    let timeLeft = 10;
+
+    const countdownInterval = setInterval(() => {
+        timeLeft--;
+        document.querySelector("#hint-timer").innerHTML = timeLeft;
+
+        if (timeLeft === 0) {
+            clearInterval(countdownInterval);
+            document.querySelector("#hint-timer").innerHTML = 'Vous pouvez envoyer un indice !';
+            canSendHint = true;
+            document.getElementById('send-hint').disabled = false;
+            document.getElementById('hint-timer').classList.remove('hidden');
+        }
+    }, 1000);
+}
 
 socket.on('receiveHint', (hint) => {
     let hintText = "Indice : ";
@@ -267,18 +327,23 @@ socket.on('receiveHint', (hint) => {
 });
 
 socket.on('goodMatch', (index, firstCardIndex) => {
-    document.getElementById('message').innerText = `Good match !`;
-    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
+    if (checkEndGame() !== true) {
+        document.getElementById('message').innerText = `Good match !`;
+        document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
 
-    setTimeout(() => {
-        if (!isMyTurn) {
-            document.querySelectorAll(".randomPokemons .pokemon__card")[firstCardIndex].classList.add("disabled");
-        } else {
-            document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
-        }
-    }, 1000);
+        setTimeout(() => {
+            if (!isMyTurn) {
+                document.querySelectorAll(".randomPokemons .pokemon__card")[firstCardIndex].classList.add("disabled");
+            } else {
+                document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
+            }
+        }, 1000);
 
-    hasChosenCard = false;
+        hasChosenCard = false;
+
+        checkEndGame();
+    }
+
 });
 
 socket.on('badMatch', (index) => {
@@ -304,4 +369,42 @@ function turnCounter() {
             viewCards(true);
         }
     }, 1000);
+}
+
+async function getTcgCard(pokemonName) {
+    const API_KEY = "75c31550-d6c3-49fa-98fc-98205889e850";
+
+    try {
+        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
+            headers: {
+                "X-Api-Key": API_KEY
+            }
+        });
+
+        if (!response.ok) throw new Error("TCG card not found");
+
+        const data = await response.json();
+
+        const filteredCards = data.data.filter(card => !card.subtypes.includes("TAG TEAM"));
+
+        if (filteredCards.length === 0) throw new Error("No valid cards found");
+
+        let randomCard = Math.floor(Math.random() * filteredCards.length);
+        return filteredCards[randomCard].images.large;
+
+    } catch (error) {
+        console.error("Error while searching TCG card:", error);
+    }
+}
+
+function checkEndGame() {
+    const hiddenCards = document.querySelectorAll(".randomPokemons .pokemon__card.is-hidden");
+
+    if (hiddenCards.length === 0) {
+        console.log('Game ended !')
+        setTimeout(() => {
+            socket.emit('gameEnded', true);
+            return gameIsEnded = true;
+        }, 5000);
+    }
 }

@@ -16,19 +16,39 @@ function getBackgroundClass(type) {
 
     return typeClasses[type] || "default";
 }
-
-export function displayPokemons(pokemons) {
+export async function displayPokemons(pokemons) {
     const randomPokemonContainer = document.querySelector(".randomPokemons");
 
-    pokemons.forEach((randomPokemon) => {
+    for (const randomPokemon of pokemons) {
         const pokemonElement = document.createElement("li");
         pokemonElement.classList.add("pokemon__card");
         const backgroundClass = getBackgroundClass(randomPokemon.type);
 
-        pokemonElement.innerHTML = `
-                <div class="pokemon__card-inner">
-                    <div class="pokemon__background pokemon__background--${backgroundClass}">
-                        <table class="pokemon__header">
+        const tcgCard = await getTcgCard(randomPokemon.name)
+        console.log(tcgCard);
+
+        if (tcgCard) {
+            pokemonElement.innerHTML = `
+               <img src="${tcgCard}" alt="${randomPokemon.name}">
+            `
+        } else {
+            pokemonElement.innerHTML = `
+                <div class="pokemon__background pokemon__background--${backgroundClass}">
+                    <table class="pokemon__header">
+                        <tr>
+                            <td class="basic" colspan="3">Basic Pokémon</td>
+                        </tr>
+                        <tr>
+                            <td class="pokemon__name">${randomPokemon.name} ${randomPokemon.type}</td>
+                            <td class="pokemon__hp">${randomPokemon.hp} HP</td>
+                            <td class="typesign"> ☻ </td>
+                        </tr>
+                    </table>
+                    <img src="${randomPokemon.image}" alt="${randomPokemon.name}">
+                    <br>
+                    <div class="pokemon__info">
+                        <p class="pokemon__description">This is a pokemon description.</p>
+                        <table class="pokemon__stats">
                             <tr>
                                 <td class="basic" colspan="3">Basic Pokémon</td>
                             </tr>
@@ -77,83 +97,34 @@ export function displayPokemons(pokemons) {
                     <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
                 </div>
             `;
+        }
+
         randomPokemonContainer.appendChild(pokemonElement);
-    });
-
-    shuffleCards();
-
-    setTimeout(() => {
-        viewCards(false);
-
-        document.querySelectorAll(".randomPokemons .pokemon__card").forEach((card, index) => {
-            card.addEventListener("click", () => deactivateCard(index, "randomPokemons"));
-        });
-
-        document.querySelectorAll(".evolvedPokemons .pokemon__card").forEach((card, index) => {
-            card.addEventListener("click", () => deactivateCard(index, "evolvedPokemons"));
-        });
-
-        turnCounter();
-    }, 10000);
-}
-
-
-function shuffleCards() {
-    const cards = document.querySelectorAll(".pokemon__card");
-    cards.forEach((card) => {
-        card.style.order = Math.floor(Math.random() * cards.length);
-    });
-}
-
-function viewCards(isVisible) {
-    isVisible ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
-    const cards = document.querySelectorAll(".pokemon__card");
-
-    cards.forEach((card) => {
-        card.classList.toggle("is-hidden");
-    });
-
-    if (isVisible === true) {
-        setTimeout(() => {
-            viewCards(false);
-            turnCounter();
-        }, 10000);
     }
 }
 
-let selectedIndexes = [];
+async function getTcgCard(pokemonName) {
+    const API_KEY = "75c31550-d6c3-49fa-98fc-98205889e850";
 
-function deactivateCard(index, listType) {
-    selectedIndexes.push({ index, listType });
+    try {
+        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
+            headers: {
+                "X-Api-Key": API_KEY
+            }
+        });
 
-    if (selectedIndexes.length === 2) {
-        const [first, second] = selectedIndexes;
+        if (!response.ok) throw new Error("TCG card not found");
 
-        if (first.index === second.index && first.listType !== second.listType) {
-            alert("Good match !");
-            document.querySelectorAll("." + first.listType + " .pokemon__card")[first.index].classList.add("disabled");
-            document.querySelectorAll("." + first.listType + " .pokemon__card")[first.index].classList.remove("is-hidden");
-            document.querySelectorAll("." + second.listType + " .pokemon__card")[second.index].classList.add("disabled");
-            document.querySelectorAll("." + second.listType + " .pokemon__card")[second.index].classList.remove("is-hidden");
-        } else {
-            alert("Bad match !");
-        }
+        const data = await response.json();
+        
+        const filteredCards = data.data.filter(card => !card.subtypes.includes("TAG TEAM"));
 
-        selectedIndexes = [];
+        if (filteredCards.length === 0) throw new Error("No valid cards found");
+
+        let randomCard = Math.floor(Math.random() * filteredCards.length);
+        return filteredCards[randomCard].images.large;
+
+    } catch (error) {
+        console.error("Error while searching TCG card:", error);
     }
-}
-
-function turnCounter() {
-    let counter = 20;
-    const interval = setInterval(() => {
-        counter--;
-        document.querySelector(".turn__counter").innerHTML = counter;
-
-        if (counter === 0) {
-            clearInterval(interval);
-            document.querySelector(".turn__counter").innerHTML = 0;
-            shuffleCards();
-            viewCards(true);
-        }
-    }, 1000);
 }
