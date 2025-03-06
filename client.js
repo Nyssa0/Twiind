@@ -332,7 +332,6 @@ socket.on('goodMatch', (index, firstCardIndex) => {
 
         checkEndGame();
     }
-
 });
 
 socket.on('badMatch', (index) => {
