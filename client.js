@@ -5,6 +5,7 @@ let playersReady = 0;
 let isMyTurn = false;
 let hasChosenCard = false;
 let canSendHint = true;
+let gameIsEnded = false;
 
 document.getElementById('createRoom').addEventListener('click', () => {
     socket.emit('createRoom');
@@ -82,6 +83,15 @@ socket.on("gameStarted", (role) => {
             }
         })
         .catch(error => console.error("Erreur lors du chargement des Pokémon :", error));
+});
+
+socket.on('gameEnded', () => {
+    console.log('Game ended !')
+    document.getElementById('message').innerText = 'The game is over !🔚 You won !🎉 Would you like to play again ?';
+    document.getElementById('startGame').disabled = false;
+    document.querySelector(".turn__counter").style.display = "none";
+    document.querySelector(".randomPokemons").innerHTML = "";
+    document.querySelector("#turn").innerHTML = "";
 });
 
 socket.on('yourTurn', (turn) => {
@@ -232,7 +242,6 @@ export async function displayPokemons(pokemons) {
             });
         });
 
-        turnCounter();
     }, 10000);
 }
 
@@ -269,7 +278,6 @@ function deactivateCard(index) {
 
     hasChosenCard = true;
     socket.emit('cardChoice', index);
-    hasChosenCard = true;
     console.log('cardChoice', index);
 
 }
@@ -319,18 +327,23 @@ socket.on('receiveHint', (hint) => {
 });
 
 socket.on('goodMatch', (index, firstCardIndex) => {
-    document.getElementById('message').innerText = `Good match !`;
-    document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
+    if (checkEndGame() !== true) {
+        document.getElementById('message').innerText = `Good match !`;
+        document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.remove("is-hidden");
 
-    setTimeout(() => {
-        if (!isMyTurn) {
-            document.querySelectorAll(".randomPokemons .pokemon__card")[firstCardIndex].classList.add("disabled");
-        } else {
-            document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
-        }
-    }, 1000);
+        setTimeout(() => {
+            if (!isMyTurn) {
+                document.querySelectorAll(".randomPokemons .pokemon__card")[firstCardIndex].classList.add("disabled");
+            } else {
+                document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");
+            }
+        }, 1000);
 
-    hasChosenCard = false;
+        hasChosenCard = false;
+
+        checkEndGame();
+    }
+
 });
 
 socket.on('badMatch', (index) => {
@@ -381,5 +394,17 @@ async function getTcgCard(pokemonName) {
 
     } catch (error) {
         console.error("Error while searching TCG card:", error);
+    }
+}
+
+function checkEndGame() {
+    const hiddenCards = document.querySelectorAll(".randomPokemons .pokemon__card.is-hidden");
+
+    if (hiddenCards.length === 0) {
+        console.log('Game ended !')
+        setTimeout(() => {
+            socket.emit('gameEnded', true);
+            return gameIsEnded = true;
+        }, 5000);
     }
 }
