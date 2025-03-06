@@ -9,18 +9,20 @@
     <title>Twiind</title>
 </head>
 <body>
-<h1>Twiind</h1>
-<button id="createRoom">Create a room</button>
-<br><br>
-<input type="text" id="roomIdInput" placeholder="Room ID">
-<button id="joinRoom">Join</button>
-<br><br>
-<button id="leaveRoom" disabled>Leave the room</button>
-<br><br>
-<button id="startGame" disabled>Start the game</button>
-<p id="message"></p>
-<p id="turn"></p>
+<header>
+    <h1>Twiind</h1>
+    <button id="createRoom">Create a room</button>
+    <br><br>
+    <input type="text" id="roomIdInput" placeholder="Room ID">
+    <button id="joinRoom">Join</button>
+    <br><br>
+    <button id="leaveRoom" disabled>Leave the room</button>
+    <br><br>
+    <button id="startGame" disabled>Start the game</button>
+    <p id="message"></p>
+</header>
 
+<p id="turn"></p>
 <div id="hints-container" class="hidden">
     <h3>Donner un indice :</h3>
     <select id="hint-type">
