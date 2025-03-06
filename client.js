@@ -364,7 +364,7 @@ function turnCounter() {
             viewCards(true);
         }
 
-        counter <= 2 ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
+        counter <= 1 ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
     }, 1000);
 }
 
