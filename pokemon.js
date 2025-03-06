@@ -1,6 +1,6 @@
 export async function getRandomPokemons(count = 9) {
     const pokemonList = [];
-    const pokemonCount = 300;
+    const pokemonCount = 800;
     const usedEvolutionChains = new Set();
     const usedPokemonIds = new Set();
 
@@ -53,6 +53,7 @@ export async function getEvolvedPokemons(pokemonList) {
             const evolutionChainUrl = speciesData.evolution_chain?.url;
             if (!evolutionChainUrl) {
                 console.warn(`No evolution chain found for ${pokemon.name}`);
+                pokemonEvolutionList.push(pokemon); // On garde le Pokémon original
                 continue;
             }
 
@@ -71,24 +72,36 @@ export async function getEvolvedPokemons(pokemonList) {
                 } else {
                     evolvedPokemon = firstEvolution.species;
                 }
-            } else {
-                evolvedPokemon = pokemon;
             }
 
-            if (evolvedPokemon) {
-                const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
-                if (!evolvedPokemonResponse.ok) throw new Error(`Evolution not found for ${pokemon.name}`);
-                const evolvedPokemonData = await evolvedPokemonResponse.json();
+            if (evolvedPokemon && currentStage.evolves_to?.length > 0) {
+                try {
+                    const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
 
-                pokemonEvolutionList.push({
-                    id: evolvedPokemonData.id,
-                    name: evolvedPokemonData.name,
-                    image: evolvedPokemonData.sprites.front_default
-                });
+                    if (!evolvedPokemonResponse.ok) {
+                        throw new Error(`Evolution not found for ${pokemon.name}`);
+                    }
+
+                    const evolvedPokemonData = await evolvedPokemonResponse.json();
+
+                    pokemonEvolutionList.push({
+                        id: evolvedPokemonData.id,
+                        name: evolvedPokemonData.name,
+                        image: evolvedPokemonData.sprites.front_default
+                    });
+
+                } catch (error) {
+                    console.error(`Error fetching evolution for ${pokemon.name}, keeping original Pokémon.`, error);
+                    pokemonEvolutionList.push(pokemon);
+                }
+
+            } else {
+                pokemonEvolutionList.push(pokemon);
             }
 
         } catch (error) {
             console.error(`Error trying to find the evolutions of ${pokemon.name}`, error);
+            pokemonEvolutionList.push(pokemon);
         }
     }
 
