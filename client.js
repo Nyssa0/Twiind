@@ -1,8 +1,10 @@
+// import { displayPokemons } from "./script.js";
 const socket = io();
 let currentRoom = null;
 let playersReady = 0;
 let isMyTurn = false;
 let hasChosenCard = false;
+let canSendHint = true;
 let gameIsEnded = false;
 
 document.getElementById('createRoom').addEventListener('click', () => {
@@ -94,13 +96,20 @@ socket.on('gameEnded', () => {
 
 socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
-    hasChosenCard = false;
+    console.log('isMyTurn', isMyTurn);
+    console.log('hasChosenCard', hasChosenCard);
     if (isMyTurn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
-        document.getElementById('hints-container').classList.remove('hidden');
+        document.querySelector("#hint-timer").innerHTML = '';
     } else {
         document.getElementById('turn').innerText = "Attendez votre tour...";
+        document.getElementById("received-hints").innerHTML = '';
+    }
+
+    if (isMyTurn || !hasChosenCard) {
         document.getElementById('hints-container').classList.add('hidden');
+    } else {
+        document.getElementById('hints-container').classList.remove('hidden');
     }
 });
 
@@ -129,17 +138,30 @@ function getBackgroundClass(type) {
     return typeClasses[type] || "default";
 }
 
-export function displayPokemons(pokemons) {
+export async function displayPokemons(pokemons) {
     const randomPokemonContainer = document.querySelector(".randomPokemons");
 
-    pokemons.forEach((randomPokemon) => {
+    for (const randomPokemon of pokemons) {
         const pokemonElement = document.createElement("li");
         pokemonElement.classList.add("pokemon__card");
         const backgroundClass = getBackgroundClass(randomPokemon.type);
 
-        pokemonElement.innerHTML = `
+        const tcgCard = await getTcgCard(randomPokemon.name)
+        console.log(tcgCard);
+
+        if (tcgCard) {
+            pokemonElement.innerHTML = `
                 <div class="pokemon__card-inner">
                     <div class="pokemon__background pokemon__background--${backgroundClass}">
+                        <img src="${tcgCard}" class="tcg-card" alt="${randomPokemon.name}">
+                    </div>
+                    <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
+                </div>
+            `;
+        } else {
+            pokemonElement.innerHTML = `
+                <div class="pokemon__card-inner">
+                    <div class="pokemon__background pokemon__background--${backgroundClass} --not-tcg">
                         <table class="pokemon__header">
                             <tr>
                                 <td class="basic" colspan="3">Basic Pokémon</td>
@@ -189,8 +211,10 @@ export function displayPokemons(pokemons) {
                     <img class="pokemon__back is-hidden" src="/assets/back-pokemon-card.png" alt="pokemon card back">
                 </div>
             `;
+
+        }
         randomPokemonContainer.appendChild(pokemonElement);
-    });
+    }
 
     shuffleCards();
 
@@ -202,18 +226,18 @@ export function displayPokemons(pokemons) {
                 if (!isMyTurn) {
                     document.getElementById('message').innerText = "Ce n'est pas votre tour !";
                     return;
+                } else {
+                    deactivateCard(index);
                 }
                 if (hasChosenCard) {
                     document.getElementById('message').innerText = "Vous avez déjà choisi une carte !";
                     return;
                 }
-                deactivateCard(index);
             });
         });
 
     }, 10000);
 }
-
 
 function shuffleCards() {
     const cards = document.querySelectorAll(".pokemon__card");
@@ -248,6 +272,8 @@ function deactivateCard(index) {
 
     hasChosenCard = true;
     socket.emit('cardChoice', index);
+    console.log('cardChoice', index);
+
 }
 
 document.getElementById('send-hint').addEventListener("click", () => {
@@ -259,7 +285,28 @@ document.getElementById('send-hint').addEventListener("click", () => {
     const hint = { type, generation, status, stage };
 
     socket.emit('sendHint', hint);
+
+    canSendHint = false;
+    document.getElementById('send-hint').disabled = true;
+    startHintCooldown();
 });
+
+function startHintCooldown() {
+    let timeLeft = 10;
+
+    const countdownInterval = setInterval(() => {
+        timeLeft--;
+        document.querySelector("#hint-timer").innerHTML = timeLeft;
+
+        if (timeLeft === 0) {
+            clearInterval(countdownInterval);
+            document.querySelector("#hint-timer").innerHTML = 'Vous pouvez envoyer un indice !';
+            canSendHint = true;
+            document.getElementById('send-hint').disabled = false;
+            document.getElementById('hint-timer').classList.remove('hidden');
+        }
+    }, 1000);
+}
 
 socket.on('receiveHint', (hint) => {
     let hintText = "Indice : ";
@@ -316,6 +363,32 @@ function turnCounter() {
             viewCards(true);
         }
     }, 1000);
+}
+
+async function getTcgCard(pokemonName) {
+    const API_KEY = "75c31550-d6c3-49fa-98fc-98205889e850";
+
+    try {
+        const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
+            headers: {
+                "X-Api-Key": API_KEY
+            }
+        });
+
+        if (!response.ok) throw new Error("TCG card not found");
+
+        const data = await response.json();
+
+        const filteredCards = data.data.filter(card => !card.subtypes.includes("TAG TEAM"));
+
+        if (filteredCards.length === 0) throw new Error("No valid cards found");
+
+        let randomCard = Math.floor(Math.random() * filteredCards.length);
+        return filteredCards[randomCard].images.large;
+
+    } catch (error) {
+        console.error("Error while searching TCG card:", error);
+    }
 }
 
 function checkEndGame() {
