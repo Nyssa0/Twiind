@@ -112,7 +112,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('playerReady', () => {
+    socket.on('playerReady', async () => {
         const roomId = userRooms.get(socket.id);
         if (!roomId) return;
 
@@ -120,18 +120,22 @@ io.on('connection', (socket) => {
         if (!readySet) return;
 
         readySet.add(socket.id);
-
         io.to(roomId).emit('updateReadyCount', readySet.size);
 
         if (readySet.size === 2) {
-            const players = [...readySet]; // Convertir Set en tableau
-            const roles = {
-                [players[0]]: 'random',
-                [players[1]]: 'evolved'
-            };
+            if (!cachedPokemons) {
+                const randomPokemons = await getRandomPokemons();
+                const evolvedPokemons = await getEvolvedPokemons(randomPokemons);
+                cachedPokemons = { randomPokemons, evolvedPokemons };
+            }
 
-            playerTurns.set(roomId, players[0]); // Le premier joueur commence
+            // Envoyer la même liste à tous les joueurs de la room
+            io.to(roomId).emit('pokemonList', cachedPokemons);
+
+            const players = [...readySet];
+            playerTurns.set(roomId, players[0]);
             firstCard.set(roomId, null);
+
             io.to(players[0]).emit('yourTurn', true);
             io.to(players[1]).emit('yourTurn', false);
 
@@ -139,10 +143,10 @@ io.on('connection', (socket) => {
             io.to(players[1]).emit('gameStarted', 'evolved');
 
             readyPlayers.set(roomId, new Set());
-
             gameOver = false;
         }
     });
+
 
 
     socket.on('cardChoice', (cardChoice) => {
@@ -212,16 +216,17 @@ io.on('connection', (socket) => {
     });
 
     socket.on('gameEnded', (status) => {
-        if (status === true) {
-            const roomId = userRooms.get(socket.id);
-            if (!roomId) return;
+        const roomId = userRooms.get(socket.id);
+        if (!roomId) return;
 
+        if (status === true) {
             io.to(roomId).emit('gameEnded');
             cachedPokemons = null;
         } else {
             gameOver = true;
         }
     });
+
 });
 
 server.listen(3000, () => {
