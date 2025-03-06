@@ -98,44 +98,46 @@ table {
 
 .pokemon__background {
   margin: 0px;
+}
+.pokemon__background.--not-tcg {
   padding: 5px 10px 5px 10px;
   border: 10px solid gold;
   border-radius: 20px;
 }
-.pokemon__background--blue {
+.pokemon__background.--not-tcg--blue {
   background: linear-gradient(to bottom right, #d9e4ec, #adc1d1, #7d99af, #557792, #7d99af, #adc1d1);
 }
-.pokemon__background--yellow {
+.pokemon__background.--not-tcg--yellow {
   background: linear-gradient(to bottom right, #ffffa4, #fff870, #fff200, #fff870, #ffffa4, #fff870);
 }
-.pokemon__background--redorange {
+.pokemon__background.--not-tcg--redorange {
   background: linear-gradient(to bottom right, #ffbfba, #ff978f, #ff756b, #ff594c, #ff756b, #ff978f);
 }
-.pokemon__background--green {
+.pokemon__background.--not-tcg--green {
   background: linear-gradient(to bottom right, #aae5b7, #78cf8b, #4fb665, #319d49, #4fb665, #78cf8b);
 }
-.pokemon__background--purple {
+.pokemon__background.--not-tcg--purple {
   background: linear-gradient(to bottom right, #9b59b6, #8e44ad, #6c3483, #5b2c6f, #6c3483, #8e44ad);
 }
-.pokemon__background--lightgreen {
+.pokemon__background.--not-tcg--lightgreen {
   background: linear-gradient(to bottom right, #c7e6b4, #7cbf44, #68a82b, #568d24, #68a82b, #7cbf44);
 }
-.pokemon__background--grey {
+.pokemon__background.--not-tcg--grey {
   background: linear-gradient(to bottom right, #e1e2e1, #c2c3c2, #b0b1b0, #a3a4a3, #b0b1b0, #c2c3c2);
 }
-.pokemon__background--pink {
+.pokemon__background.--not-tcg--pink {
   background: linear-gradient(to bottom right, #f8c9d4, #f4a8c6, #f27c9c, #f06292, #f27c9c, #f4a8c6);
 }
-.pokemon__background--brown {
+.pokemon__background.--not-tcg--brown {
   background: linear-gradient(to bottom right, #e74c3c, #c0392b, #a93226, #922b21, #a93226, #c0392b);
 }
-.pokemon__background--darkpurple {
+.pokemon__background.--not-tcg--darkpurple {
   background: linear-gradient(to bottom right, #7b2e8c, #6a1e78, #5e2a7f, #4a1e5c, #5e2a7f, #6a1e78);
 }
-.pokemon__background--lightbrown {
+.pokemon__background.--not-tcg--lightbrown {
   background: linear-gradient(to bottom right, #c2b280, #a68c44, #8b6e33, #7b4f28, #8b6e33, #a68c44);
 }
-.pokemon__background--lightpurple {
+.pokemon__background.--not-tcg--lightpurple {
   background: linear-gradient(to bottom right, #f5b1d1, #d78bb7, #b561d1, #8e44ad, #b561d1, #d78bb7);
 }
 
@@ -295,6 +297,12 @@ body.disabled,
 
 .hidden {
   visibility: hidden;
+}
+
+.tcg-card {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /*# sourceMappingURL=style.css.map */
