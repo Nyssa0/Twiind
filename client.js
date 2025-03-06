@@ -244,7 +244,7 @@ function shuffleCards() {
 }
 
 function viewCards(isVisible) {
-    isVisible ? document.querySelector('.randomPokemons').classList.add("disabled") : document.querySelector('.randomPokemons').classList.remove("disabled");
+    isVisible ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
     const cards = document.querySelectorAll(".pokemon__card");
 
     cards.forEach((card) => {

@@ -278,7 +278,7 @@ span.strong {
   font-weight: 700;
 }
 
-.randomPokemons.disabled,
+body.disabled,
 .pokemon__card.disabled {
   pointer-events: none;
 }
@@ -295,6 +295,17 @@ span.strong {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.turn__counter {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+header {
+  margin: 0 auto;
+  width: 500px;
 }
 
 /*# sourceMappingURL=style.css.map */
