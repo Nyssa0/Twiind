@@ -265,3 +265,7 @@ body.disabled,
 .pokemon__card.disabled {
 	filter: grayscale(1);
 }
+
+.hidden {
+	visibility: hidden;
+}

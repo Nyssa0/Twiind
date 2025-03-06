@@ -12,6 +12,9 @@ const io = new Server(server);
 const userRooms = new Map();
 const roomPlayers = new Map();
 const readyPlayers = new Map();
+let selectedIndexes = [];
+const playerTurns = new Map();
+const firstCard = new Map();
 
 app.use(express.static(__dirname));
 
@@ -124,11 +127,73 @@ io.on('connection', (socket) => {
                 [players[1]]: 'evolved'
             };
 
+            playerTurns.set(roomId, players[0]); // Le premier joueur commence
+            firstCard.set(roomId, null);
+            io.to(players[0]).emit('yourTurn', true);
+            io.to(players[1]).emit('yourTurn', false);
+
             io.to(players[0]).emit('gameStarted', 'random');
             io.to(players[1]).emit('gameStarted', 'evolved');
 
+
             readyPlayers.set(roomId, new Set());
         }
+    });
+
+
+    socket.on('cardChoice', (cardChoice) => {
+        const roomId = userRooms.get(socket.id);
+        if (!roomId) return;
+
+        if (socket.id !== playerTurns.get(roomId)) {
+            socket.emit('error', 'Ce n\'est pas votre tour');
+            return;
+        }
+
+        const players = roomPlayers.get(roomId);
+        const opponent = players.find((p) => p !== socket.id);
+
+        if (!firstCard.get(roomId)) {
+            // Premier joueur choisit une carte
+            firstCard.set(roomId, { socketId: socket.id, index: cardChoice });
+
+            // On passe la main à l'autre joueur
+            playerTurns.set(roomId, opponent);
+            io.to(socket.id).emit('yourTurn', false);
+            io.to(opponent).emit('yourTurn', true);
+            return;
+        }
+
+        // Second joueur choisit
+        const firstChoice = firstCard.get(roomId);
+        if (firstChoice.index === cardChoice) {
+            io.to(roomId).emit('goodMatch', cardChoice, firstChoice.index);
+
+            // Réinitialisation et inversion des rôles
+            firstCard.set(roomId, null);
+            playerTurns.set(roomId, socket.id); // Le joueur qui a trouvé devient le "premier joueur"
+
+            io.to(socket.id).emit('yourTurn', true);
+            io.to(opponent).emit('yourTurn', false);
+        } else {
+            io.to(roomId).emit('badMatch', cardChoice);
+            // le joueur actuel continue jusqu'à ce qu'il trouve une paire
+        }
+    });
+
+    socket.on('sendHint', (hint) => {
+        const roomId = userRooms.get(socket.id);
+        if (!roomId) return;
+
+        const players = roomPlayers.get(roomId);
+        const opponent = players.find((p) => p !== socket.id);
+
+        if (playerTurns.get(roomId) !== opponent) {
+            socket.emit('error', "Vous ne pouvez envoyer des indices que lorsque vous attendez.");
+            return;
+        }
+
+        io.to(opponent).emit('receiveHint', hint);
     });
 
     socket.on('disconnect', () => {
