@@ -71,11 +71,9 @@ export async function getEvolvedPokemons(pokemonList) {
                 } else {
                     evolvedPokemon = firstEvolution.species;
                 }
-            } else {
-                evolvedPokemon = pokemon;
             }
 
-            if (evolvedPokemon) {
+            if (evolvedPokemon && currentStage.evolves_to?.length > 0) {
                 const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
                 if (!evolvedPokemonResponse.ok) throw new Error(`Evolution not found for ${pokemon.name}`);
                 const evolvedPokemonData = await evolvedPokemonResponse.json();
@@ -85,6 +83,12 @@ export async function getEvolvedPokemons(pokemonList) {
                     name: evolvedPokemonData.name,
                     image: evolvedPokemonData.sprites.front_default
                 });
+            } else {
+                pokemonEvolutionList.push({
+                    id: pokemon.id,
+                    name: pokemon.name,
+                    image: pokemon.image
+                })
             }
 
         } catch (error) {
