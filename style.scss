@@ -12,7 +12,8 @@
 	grid-template-rows: repeat(3, auto);
 	grid-auto-flow: row;
 	justify-items: center;
-	gap: 50px;
+	gap: 10px;
+	width: fit-content;
 	max-width: 1000px;
 	margin-left: auto;
 	margin-right: auto;
@@ -20,8 +21,8 @@
 
 .pokemon__card {
 	background-color: transparent;
-	width: 310px;
-	height: 480px;
+	width: 170px;
+	height: 263px;
 	perspective: 1000px;
 }
 
@@ -110,7 +111,7 @@
 }
 
 .pokemon__info {
-	height: 210px;
+	height: 50%;
 	border-radius: 5px;
 	border-opacity: 50%;
 }
@@ -154,7 +155,7 @@ td.basic {
 	border: 5px yellow outset;
 	box-shadow: 3px 3px 10px #000;
 	width: 100%;
-	height: 190px;
+	height: 30%;
 }
 
 .pokemon__description {
@@ -284,4 +285,10 @@ body.disabled,
 header {
 	margin: 0 auto;
 	width: 500px;
+}
+
+#countdown{
+	font-size: 40px;
+	font-weight: 800;
+	text-align: center;
 }
