@@ -1,4 +1,4 @@
-export async function getRandomPokemons(count = 2) {
+export async function getRandomPokemons(count = 9) {
     const pokemonList = [];
     const pokemonCount = 1000;
     const usedEvolutionChains = new Set();
