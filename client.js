@@ -71,6 +71,7 @@ socket.on('gameStarted', () => {
     document.getElementById('message').innerText = 'The game starts ! 🚀';
     document.getElementById('startGame').disabled = true;
     startCountdown();
+    document.querySelector(".turn__counter").style.display = "block";
 });
 
 socket.on("gameStarted", (role) => {
@@ -364,7 +365,7 @@ function turnCounter() {
             viewCards(true);
         }
 
-        counter <= 1 ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
+        counter <= 2 ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
     }, 1000);
 }
 

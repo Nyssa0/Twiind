@@ -53,6 +53,9 @@ table {
   grid-auto-flow: row;
   justify-items: center;
   gap: 50px;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pokemon__card {
@@ -298,6 +301,7 @@ body.disabled,
 }
 
 .turn__counter {
+  display: none;
   text-align: center;
   font-size: 30px;
   font-weight: 700;
