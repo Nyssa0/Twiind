@@ -21,6 +21,55 @@
 <p id="message"></p>
 <p id="turn"></p>
 
+<div id="hints-container" class="hidden">
+    <h3>Donner un indice :</h3>
+    <select id="hint-type">
+        <option value="">Type</option>
+        <option value="Feu">Feu</option>
+        <option value="Eau">Eau</option>
+        <option value="Plante">Plante</option>
+        <option value="Électrik">Électrik</option>
+        <option value="Psy">Psy</option>
+        <option value="Ténèbres">Ténèbres</option>
+        <option value="Combat">Combat</option>
+        <option value="Dragon">Dragon</option>
+        <option value="Fée">Fée</option>
+        <option value="Incolore">Incolore</option>
+    </select>
+
+    <select id="hint-generation">
+        <option value="">Génération</option>
+        <option value="1">Génération 1</option>
+        <option value="2">Génération 2</option>
+        <option value="3">Génération 3</option>
+        <option value="4">Génération 4</option>
+        <option value="5">Génération 5</option>
+        <option value="6">Génération 6</option>
+        <option value="7">Génération 7</option>
+        <option value="8">Génération 8</option>
+        <option value="9">Génération 9</option>
+    </select>
+
+    <select id="hint-status">
+        <option value="">Statut</option>
+        <option value="Basique">Basique</option>
+        <option value="Légendaire">Légendaire</option>
+        <option value="Mythique">Mythique</option>
+    </select>
+
+    <select id="hint-stage">
+        <option value="">Stade évolutif</option>
+        <option value="1">Stade 1</option>
+        <option value="2">Stade 2</option>
+        <option value="3">Stade 3</option>
+        <option value="N'évolue pas">N'évolue pas</option>
+    </select>
+
+    <button id="send-hint">Envoyer l'indice</button>
+</div>
+
+<div id="received-hints"></div>
+
 <div class="turn__counter">20</div>
 
 <ul class="randomPokemons board"></ul>

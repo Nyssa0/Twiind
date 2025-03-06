@@ -87,10 +87,12 @@ socket.on('yourTurn', (turn) => {
     isMyTurn = turn;
     hasChosenCard = false;
     console.log('isMyTurn', isMyTurn);
-    if (turn) {
+    if (isMyTurn) {
         document.getElementById('turn').innerText = "C'est à vous de jouer !";
+        document.getElementById('hints-container').classList.remove('hidden');
     } else {
         document.getElementById('turn').innerText = "Attendez votre tour...";
+        document.getElementById('hints-container').classList.add('hidden');
     }
 });
 
@@ -232,8 +234,30 @@ function viewCards(isVisible) {
 function deactivateCard(index) {
     socket.emit('cardChoice', index);
     console.log('cardChoice', index);
-
 }
+
+document.getElementById('send-hint').addEventListener("click", () => {
+    const type = document.getElementById('hint-type').value;
+    const generation = document.getElementById('hint-generation').value;
+    const status = document.getElementById('hint-status').value;
+    const stage = document.getElementById('hint-stage').value;
+
+    const hint = { type, generation, status, stage };
+
+    socket.emit('sendHint', hint);
+});
+
+socket.on('receiveHint', (hint) => {
+    let hintText = "Indice : ";
+    if (hint.type) hintText += `Type : ${hint.type}, `;
+    if (hint.generation) hintText += `Génération : ${hint.generation}, `;
+    if (hint.status) hintText += `Statut : ${hint.status}, `;
+    if (hint.stage) hintText += `Stade évolutif : ${hint.stage}`;
+
+    document.getElementById("received-hints").innerHTML = `
+        <h3>${hintText}</h3>
+    `;
+});
 
 socket.on('goodMatch', (index) => {
     document.querySelectorAll(".randomPokemons .pokemon__card")[index].classList.add("disabled");

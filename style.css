@@ -293,4 +293,8 @@ body.disabled,
   filter: grayscale(1);
 }
 
+.hidden {
+  visibility: hidden;
+}
+
 /*# sourceMappingURL=style.css.map */

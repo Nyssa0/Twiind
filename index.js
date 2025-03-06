@@ -182,6 +182,21 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('sendHint', (hint) => {
+        const roomId = userRooms.get(socket.id);
+        if (!roomId) return;
+
+        const players = roomPlayers.get(roomId);
+        const opponent = players.find((p) => p !== socket.id);
+
+        if (playerTurns.get(roomId) !== opponent) {
+            socket.emit('error', "Vous ne pouvez envoyer des indices que lorsque vous attendez.");
+            return;
+        }
+
+        io.to(opponent).emit('receiveHint', hint);
+    });
+
     socket.on('disconnect', () => {
         const roomId = userRooms.get(socket.id);
         if (roomId) {
