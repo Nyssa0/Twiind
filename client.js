@@ -70,6 +70,7 @@ socket.on('updateReadyCount', (readyCount) => {
 socket.on('gameStarted', () => {
     document.getElementById('message').innerText = 'La partie commence ! 🚀';
     document.getElementById('startGame').disabled = true;
+    document.querySelector(".turn__counter").style.display = "block";
 });
 
 socket.on("gameStarted", (role) => {
@@ -356,6 +357,8 @@ function turnCounter() {
             shuffleCards();
             viewCards(true);
         }
+
+        counter <= 2 ? document.body.classList.add("disabled") : document.body.classList.remove("disabled");
     }, 1000);
 }
 
