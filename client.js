@@ -70,6 +70,7 @@ socket.on('updateReadyCount', (readyCount) => {
 socket.on('gameStarted', () => {
     document.getElementById('message').innerText = 'The game starts ! 🚀';
     document.getElementById('startGame').disabled = true;
+    startCountdown();
 });
 
 socket.on("gameStarted", (role) => {
@@ -87,7 +88,6 @@ socket.on("gameStarted", (role) => {
 
 socket.on('gameEnded', () => {
     console.log('Game ended !')
-    document.getElementById('message').innerText = 'The game is over !🔚 You won !🎉 Would you like to play again ?';
     document.getElementById('startGame').disabled = false;
     document.querySelector(".turn__counter").style.display = "none";
     document.querySelector(".randomPokemons").innerHTML = "";
@@ -401,7 +401,32 @@ function checkEndGame() {
         console.log('Game ended !')
         setTimeout(() => {
             socket.emit('gameEnded', true);
+            document.getElementById('message').innerText = 'The game is over !🔚 You won !🎉 Would you like to play again ?';
             return gameIsEnded = true;
         }, 5000);
     }
+}
+
+let countdownTimer;
+let timeLeft = 120;
+function startCountdown() {
+    clearInterval(countdownTimer);
+    timeLeft = 120;
+
+    countdownTimer = setInterval(() => {
+        timeLeft--;
+        updateCountdownDisplay(timeLeft);
+
+        if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            socket.emit('gameEnded', true);
+            document.getElementById('message').innerText = 'The game is over !🔚 You lost... 😭 Would you like to play again ?';
+        }
+    }, 1000);
+}
+
+function updateCountdownDisplay(time) {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    document.getElementById('countdown').textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
