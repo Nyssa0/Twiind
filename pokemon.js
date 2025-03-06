@@ -1,29 +1,42 @@
 export async function getRandomPokemons(count = 9) {
     const pokemonList = [];
-    const pokemonCount = 100;
+    const pokemonCount = 300;
+    const usedEvolutionChains = new Set();
+    const usedPokemonIds = new Set();
 
-    const promises = Array.from({ length: count }, async () => {
+    while (pokemonList.length < count) {
         const randomId = Math.floor(Math.random() * pokemonCount) + 1;
+
+        if (usedPokemonIds.has(randomId)) continue;
+
         try {
             const randomPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
             if (!randomPokemonResponse.ok) throw new Error(`Pokemon ${randomId} not found`);
             const randomPokemonData = await randomPokemonResponse.json();
-            return {
+
+            const speciesResponse = await fetch(randomPokemonData.species.url);
+            if (!speciesResponse.ok) throw new Error(`Species data not found for Pokemon ${randomId}`);
+            const speciesData = await speciesResponse.json();
+
+            const evolutionChainUrl = speciesData.evolution_chain?.url || `no-evolution-${randomId}`;
+
+            if (usedEvolutionChains.has(evolutionChainUrl)) continue;
+
+            usedEvolutionChains.add(evolutionChainUrl);
+            usedPokemonIds.add(randomId);
+
+            pokemonList.push({
                 id: randomPokemonData.id,
                 name: randomPokemonData.name,
                 image: randomPokemonData.sprites.front_default,
                 hp: randomPokemonData.stats[0].base_stat,
                 type: randomPokemonData.types[0].type.name
-            };
+            });
+
         } catch (error) {
-            console.error(`Error while searching pokemon ${randomId}:`, error);
+            console.error(`Erreur lors de la récupération du Pokémon ${randomId}:`, error);
         }
-    });
-
-    const randomPokemons = await Promise.all(promises);
-    pokemonList.push(...randomPokemons);
-
-    await getEvolvedPokemons(pokemonList);
+    }
 
     return pokemonList;
 }
@@ -34,25 +47,37 @@ export async function getEvolvedPokemons(pokemonList) {
     for (const pokemon of pokemonList) {
         try {
             const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemon.id}`);
-            if (!speciesResponse.ok) throw new Error(`Specie not found for ${pokemon.name}`);
+            if (!speciesResponse.ok) throw new Error(`Species not found for ${pokemon.name}`);
             const speciesData = await speciesResponse.json();
 
-            const evolutionChainUrl = speciesData.evolution_chain.url;
+            const evolutionChainUrl = speciesData.evolution_chain?.url;
+            if (!evolutionChainUrl) {
+                console.warn(`No evolution chain found for ${pokemon.name}`);
+                continue;
+            }
+
             const evolutionResponse = await fetch(evolutionChainUrl);
+            if (!evolutionResponse.ok) throw new Error(`Evolution data not found for ${pokemon.name}`);
             const evolutionData = await evolutionResponse.json();
 
             let evolvedPokemon = null;
             let currentStage = evolutionData.chain;
 
-            if(currentStage.evolves_to[0].evolves_to[0]) {
-                evolvedPokemon = currentStage.evolves_to[0].evolves_to[0].species;
+            if (currentStage.evolves_to?.length > 0) {
+                const firstEvolution = currentStage.evolves_to[0];
+
+                if (firstEvolution.evolves_to?.length > 0) {
+                    evolvedPokemon = firstEvolution.evolves_to[0].species;
+                } else {
+                    evolvedPokemon = firstEvolution.species;
+                }
             } else {
-                evolvedPokemon = currentStage.evolves_to[0].species;
+                evolvedPokemon = pokemon;
             }
 
             if (evolvedPokemon) {
                 const evolvedPokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolvedPokemon.name}`);
-                if (!evolvedPokemonResponse.ok) throw new Error(`Évolution non trouvée pour ${pokemon.name}`);
+                if (!evolvedPokemonResponse.ok) throw new Error(`Evolution not found for ${pokemon.name}`);
                 const evolvedPokemonData = await evolvedPokemonResponse.json();
 
                 pokemonEvolutionList.push({
@@ -63,7 +88,7 @@ export async function getEvolvedPokemons(pokemonList) {
             }
 
         } catch (error) {
-            console.error(`Error trying to find the evolutions ${pokemon.name}`, error);
+            console.error(`Error trying to find the evolutions of ${pokemon.name}`, error);
         }
     }
 

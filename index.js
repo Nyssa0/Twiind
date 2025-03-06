@@ -204,6 +204,7 @@ io.on('connection', (socket) => {
             roomPlayers.set(roomId, roomPlayers.get(roomId).filter(id => id !== socket.id));
             readyPlayers.get(roomId)?.delete(socket.id);
             io.to(roomId).emit('playerLeft', socket.id);
+            cachedPokemons = null
         }
     });
 });
